@@ -1,0 +1,388 @@
+// Constantes du jeu
+
+	var NBR_LIGNES = 7;
+	var NBR_BRIQUES_PAR_LIGNE = 6;
+
+
+	var BRIQUE_WIDTH = (400-NBR_BRIQUES_PAR_LIGNE)/NBR_BRIQUES_PAR_LIGNE;
+	var BRIQUE_HEIGHT = 15;
+	var ESPACE_BRIQUE = 2;
+	
+	var BARRE_JEU_WIDTH = 80;
+	var BARRE_JEU_HEIGHT = 10;
+
+	var COULEURS_BRIQUES = ["#11156D","#1136C7","#1C57E1","#597DF7","#779BF0"];
+
+	//----Vitesse déplacement barre-------------//
+
+	var PXL_DEPLA = 10;
+	var PADDLE_COLOR = "#43353D";
+
+	//----------Zone de jeu------------//
+	var ZONE_JEU_WIDTH = 400;
+	var ZONE_JEU_HEIGHT = 300;
+
+	
+
+	//----------Balle---------//
+	var COULEUR_BALLE = "#E3000E";
+	var DIMENSION_BALLE = 10;
+	var VITESSE_BALLE = 2;
+	
+	
+	// Variables
+	var tabBriques; // Tableau contenant les briques
+	var barreX; 
+	var barreY; 
+
+	var context;
+
+
+	var balleX = 200; // Position de la balle au début du jeu
+	var balleY = 250;
+
+	var dirBalleX = 0;
+	var dirBalleY = -1;
+	var Jeu;
+	var limiteBriques = (ESPACE_BRIQUE+BRIQUE_HEIGHT)*NBR_LIGNES;
+	var Gagne = 0; // Variable pour determiner si la partie est terminée
+	var start = true;
+
+
+
+	/* -------------------- Initialisation -------------------- */
+window.addEventListener('load', init, false);
+
+
+
+
+function init(){
+	
+	//Gestion des déplacement
+	window.addEventListener('keydown',checkDepla, false);
+	window.addEventListener("mousemove", checkMouse, false);
+
+	// Remplissage des éléments HTML
+	chargerSelecteurCouleur();
+	chargerSelecteurBriquesLigne();
+	chargerPaddle();
+
+	// Préparation du jeu
+	generator();
+
+	// Ajout des évenements
+	document.getElementById("base").addEventListener('change', MAJ_Couleur, false);
+	document.getElementById("ligne").addEventListener('change', MAJ_NbBriquesLigne, false);
+	document.getElementById("paddle").addEventListener('change', MAJ_Paddle, false);
+}
+
+function chargerSelecteurCouleur(){
+	var palette = ["Bleu", "Jaune", "Rouge", "Verte"];
+	select ="";
+	for(var i = 0; i <= 3; i++){
+		select += "<option value="+i+">Palette "+palette[i]+"</option>";
+	}
+	document.getElementById("base").innerHTML = select;
+}
+
+function chargerSelecteurBriquesLigne(){
+	select ="";
+	for(var i = 6; i <= 10; i++){
+		select += "<option value="+i+">"+i+" Briques Par Lignes</option>";
+	}
+	document.getElementById("ligne").innerHTML = select;
+}
+
+function chargerPaddle(){
+	var paddle =["Normal", "Large", "Ultra large"];
+	select ="";
+	for(var i = 0; i <= 2; i++){
+		select += "<option value="+i+">Paddle "+paddle[i]+"</option>";
+	}
+	document.getElementById("paddle").innerHTML = select;
+
+}
+
+/* ------------------ Fonctions externes ------------------ */
+
+	
+	function generator(){
+	  // On récupère l'objet canvas
+	  var elem = document.getElementById('canvasElem');
+	  if (!elem || !elem.getContext) {
+		return;
+	  }
+
+	  // On récupère le contexte 2D
+	  context = elem.getContext('2d');
+	  if (!context) {
+		return;
+	  }
+	  
+	  // Initialisations des variables
+	  ZONE_JEU_WIDTH = elem.width;
+	  ZONE_JEU_HEIGHT = elem.height;
+	  barreX = (ZONE_JEU_WIDTH/2)-(BARRE_JEU_WIDTH/2);
+	  barreY = (ZONE_JEU_HEIGHT-BARRE_JEU_HEIGHT);
+	  
+
+	 
+
+	  // Le navigateur est compatible, on peut continuer: On initialise le jeu.
+	  creerBriques(context, NBR_LIGNES, NBR_BRIQUES_PAR_LIGNE, BRIQUE_WIDTH, BRIQUE_HEIGHT, ESPACE_BRIQUE);
+	  
+	  // Boucle de rafraichissement du contexte 2D
+	  Jeu = setInterval(Game, 10);
+	  
+	  
+
+	}
+	
+
+	//--------------Mise à jour----------------//
+
+	function MAJ_Couleur(){
+
+	var couleurJ = ["#FECD04", "#FAD53D", "#F8DD70", "#F7E495", "#F7E9B0"];
+	var couleurB = ["#11156D","#1136C7","#1C57E1","#597DF7","#779BF0"];
+	var couleurV = ["#349935","#33A828","#27AE61","#41A35B","#2DCC70"];
+	var couleurR = ["#B30700","#F21818","#F54930","#E74C3C","#F54F37"];
+
+
+	var base   = document.getElementById("base");
+	choice     = base.selectedIndex;
+	valeur     = base.options[choice].value;
+
+	if(valeur == 0){
+		COULEURS_BRIQUES = couleurB;
+	}else if(valeur == 1){
+
+		COULEURS_BRIQUES = couleurJ;
+	}else if(valeur == 2){
+		COULEURS_BRIQUES = couleurR;
+	}else{
+		COULEURS_BRIQUES = couleurV;
+	}
+	
+	generator();
+}
+
+function MAJ_NbBriquesLigne(){
+	var base              = document.getElementById("ligne");
+	choice                = base.selectedIndex;
+	valeur                = base.options[choice].value;
+
+	NBR_BRIQUES_PAR_LIGNE = valeur;
+	BRIQUE_WIDTH          = (400-NBR_BRIQUES_PAR_LIGNE)/NBR_BRIQUES_PAR_LIGNE;
+	
+	generator();
+}
+
+function MAJ_Paddle(){
+	var base              = document.getElementById("paddle");
+	choice                = base.selectedIndex;
+	
+	if(choice == 0){
+		BARRE_JEU_WIDTH       = 80;
+	}else if(choice == 1){
+		BARRE_JEU_WIDTH       = 120;
+	}else{
+		BARRE_JEU_WIDTH       = 200;
+	}
+
+	
+	generator();
+
+}
+
+
+//-----------Deplacemens--------------//
+
+function checkDepla(e) {
+		// Flêche de droite préssée
+		if (e.keyCode == 39) {
+			if ( (barreX+PXL_DEPLA+BARRE_JEU_WIDTH) <= ZONE_JEU_WIDTH ) barreX += PXL_DEPLA;
+		}
+		// Flêche de gauche préssée
+		else if (e.keyCode == 37) {
+			if ( ((barreX-PXL_DEPLA)) >= 0 )  barreX -= PXL_DEPLA;
+		}
+
+		else if(e.keyCode == 13){
+			if (start) {
+				start = false;
+			}
+		}
+	}
+
+function checkMouse(e) {
+
+	/*
+	Calul du déplacement de la barre
+	*/
+	var elem = document.getElementById('canvasElem');
+	
+
+     var calcul = e.clientX - elem.offsetLeft;
+
+        if(calcul > 0 && calcul < ZONE_JEU_WIDTH) {
+            barreX = calcul - BARRE_JEU_WIDTH/2;
+        }
+    }
+
+
+/*---------------------------JEU----------------------*/
+
+	// Fonction permettant de créer les briques du jeu
+	function creerBriques(ctx, nbrLignes, nbrParLigne, largeur, hauteur, espace) {
+	
+		// Tableau virtuel: On initialise les lignes de briques
+		tabBriques = new Array(nbrLignes);
+		
+		for (var i=0; i < nbrLignes; i++) {
+			
+			// Tableau virtuel: On initialise les briques de la ligne
+			tabBriques[i] = new Array(nbrParLigne);
+			
+			// Affichage: On attribue une couleur aux briques de la ligne
+			ctx.fillStyle = COULEURS_BRIQUES[i];
+			
+			for (var j=0; j < nbrParLigne; j++) {
+				
+				// Affichage: On affiche une nouvelle brique
+				ctx.fillRect((j*(largeur+espace)),(i*(hauteur+espace)),largeur,hauteur);
+				
+				// Tableau virtuel: On attribue à la case actuelle la valeur 1 = Une brique existe encore
+				tabBriques[i][j] = 1;
+				
+			}
+		}
+		
+		// Nos briques sont initialisées.
+		return 1;
+		
+	}
+	
+function ball(){
+
+		// Affichage de la balle
+		context.fillStyle = COULEUR_BALLE;
+		context.beginPath();
+	    context.arc(balleX, balleY, DIMENSION_BALLE, 0, Math.PI*2, true);
+	    context.closePath();
+	    context.fill();
+
+	}
+
+function paddle(){
+
+		//affichage barre déplacement
+
+		context.fillStyle = PADDLE_COLOR;
+		context.fillRect(barreX,barreY,BARRE_JEU_WIDTH,BARRE_JEU_HEIGHT);
+	}
+
+function collision(){
+	
+	// Test des collisions avec les briques
+		if ( balleY <= limiteBriques) {
+			// On est dans la zone des briques
+			var Y = Math.floor(balleY/(BRIQUE_HEIGHT+ESPACE_BRIQUE));
+			var X = Math.floor(balleX/(BRIQUE_WIDTH+ESPACE_BRIQUE));
+			if ( tabBriques[Y][X] == 1 ) {
+				tabBriques[Y][X] = 0;
+				dirBalleY = 1;
+			}
+		}
+	}
+
+
+function directionBall(){
+
+	if ( (balleX + dirBalleX * VITESSE_BALLE) >  ZONE_JEU_WIDTH) dirBalleX = -1;
+		else if ( (balleX + dirBalleX * VITESSE_BALLE) <  0) dirBalleX = 1;
+		if ( (balleY + dirBalleY * VITESSE_BALLE) >  ZONE_JEU_HEIGHT) perdu();
+		else {
+			if ( (balleY + dirBalleY * VITESSE_BALLE) <  0) dirBalleY = 1;
+			else {
+				if ( ((balleY + dirBalleY * VITESSE_BALLE) > (ZONE_JEU_HEIGHT - BARRE_JEU_HEIGHT)) && ((balleX + dirBalleX * VITESSE_BALLE) >= barreX) && ((balleX + dirBalleX * VITESSE_BALLE) <= (barreX+BARRE_JEU_WIDTH))) {
+					dirBalleY = -1;
+					dirBalleX = 2*(balleX-(barreX+BARRE_JEU_WIDTH/2))/BARRE_JEU_WIDTH;
+				}
+			}
+		}
+}
+
+
+function reloadBrique(){
+	// Réaffichage des briques
+		for (var i=0; i < tabBriques.length; i++) {
+			context.fillStyle = COULEURS_BRIQUES[i];
+			for (var j=0; j < tabBriques[i].length; j++) {
+				if (tabBriques[i][j] == 1) {
+					context.fillRect((j*(BRIQUE_WIDTH+ESPACE_BRIQUE)),(i*(BRIQUE_HEIGHT+ESPACE_BRIQUE)),BRIQUE_WIDTH,BRIQUE_HEIGHT);
+					Gagne = 0; // Le joueur n'a pas gagné, il reste toujours au moins une brique
+				}
+			}
+		}
+
+}
+
+
+function perdu() {
+		
+		alert("Perdu !");
+}
+	
+function gagne() {
+		
+		alert("Bravo!");
+}
+	
+function newContext(ctx, width, zonewidth, height, zoneheight) {
+		ctx.clearRect(width, height, zonewidth, zoneheight);
+}
+
+
+function Game() {
+		
+		// On efface la zone
+		newContext(context, 0, ZONE_JEU_WIDTH, 0, ZONE_JEU_HEIGHT);
+		
+		// On réaffiche le nécessaire
+		
+		Gagne = 1;
+
+		reloadBrique(); // recharge les briques
+		
+		// On vérifie si le joueur à gagné
+		if ( Gagne ){
+			gagne();
+		}
+		
+		// Réaffichage de la barre de direction
+		paddle();
+		
+		// Calcul de la nouvelle position de la balle
+		
+		if(start == false){
+
+		directionBall(); // direction de la balle
+		
+		collision(); // detecte les collisions
+		
+		balleX += dirBalleX * VITESSE_BALLE;
+		balleY += dirBalleY * VITESSE_BALLE;
+		
+		}
+		
+		//affichage de la balle
+		ball();
+		
+	}
+
+
+	
+	
+	
+	
